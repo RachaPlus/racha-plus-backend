@@ -3,7 +3,6 @@ package br.com.rachaplus.api.application.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
-import org.aspectj.bridge.Message;
 
 public record CadastroUsuarioDTO(
         @NotBlank(message = "O nome é obrigatório")
