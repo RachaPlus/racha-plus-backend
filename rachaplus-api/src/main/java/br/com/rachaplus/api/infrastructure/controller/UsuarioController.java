@@ -1,6 +1,7 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.CadastroUsuarioDTO;
+import br.com.rachaplus.api.application.dto.UsuarioResponseDTO;
 import br.com.rachaplus.api.application.service.UsuarioService;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
@@ -20,9 +21,9 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<Void> cadastrar(@RequestBody @Valid CadastroUsuarioDTO dadosNovoUsuario) {
-        usuarioService.cadastrar(dadosNovoUsuario);
+    public ResponseEntity<UsuarioResponseDTO> cadastrar(@RequestBody @Valid CadastroUsuarioDTO dadosNovoUsuario) {
+        var usuarioResponseDTO = usuarioService.cadastrar(dadosNovoUsuario);
 
-        return ResponseEntity.status(201).build();
+        return ResponseEntity.status(201).body(usuarioResponseDTO);
     }
 }

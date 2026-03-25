@@ -1,10 +1,13 @@
 package br.com.rachaplus.api.application.service;
 
 import br.com.rachaplus.api.application.dto.CadastroUsuarioDTO;
+import br.com.rachaplus.api.application.dto.UsuarioResponseDTO;
 import br.com.rachaplus.api.domain.Usuario;
 import br.com.rachaplus.api.domain.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.util.Optional;
 
 @Service
 public class UsuarioService {
@@ -17,7 +20,7 @@ public class UsuarioService {
         this.passwordEncoder = passwordEncoder;
     }
 
-    public void cadastrar(CadastroUsuarioDTO dadosNovoUsuario) {
+    public UsuarioResponseDTO cadastrar(CadastroUsuarioDTO dadosNovoUsuario) {
         var usuarioExistente = usuarioRepository.findByEmail(dadosNovoUsuario.email());
 
         if (usuarioExistente.isPresent()) {
@@ -29,6 +32,7 @@ public class UsuarioService {
         novoUsuario.setEmail(dadosNovoUsuario.email());
         novoUsuario.setSenha(passwordEncoder.encode(dadosNovoUsuario.senha()));
 
-        usuarioRepository.save(novoUsuario);
+        var usuarioResponseDTO = new UsuarioResponseDTO(usuarioRepository.save(novoUsuario));
+        return usuarioResponseDTO;
     }
 }

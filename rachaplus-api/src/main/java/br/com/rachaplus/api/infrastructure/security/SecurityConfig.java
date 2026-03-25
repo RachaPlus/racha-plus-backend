@@ -26,7 +26,7 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS)) // API REST não guarda sessões no servidor
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll(); // Libera o acesso ao cadastro
-                    req.anyRequest().authenticated(); // Todo o resto da API continua bloqueado
+                    req.anyRequest().authenticated(); // O resto da API continua bloqueado
                 })
                 .build();
     }
