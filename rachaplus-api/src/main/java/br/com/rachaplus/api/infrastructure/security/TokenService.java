@@ -26,4 +26,15 @@ public class TokenService {
                 .signWith(key)
                 .compact();
     }
+
+    public String getSubject(String tokenJWT) {
+        SecretKey key = Keys.hmacShaKeyFor(SECRET_KEY.getBytes());
+
+        return Jwts.parser()
+                .verifyWith(key)
+                .build()
+                .parseSignedClaims(tokenJWT)
+                .getPayload()
+                .getSubject();
+    }
 }
