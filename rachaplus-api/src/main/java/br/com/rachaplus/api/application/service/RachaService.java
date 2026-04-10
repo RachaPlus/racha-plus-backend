@@ -14,8 +14,6 @@ import java.util.UUID;
 @Service
 public class RachaService {
 
-    private final float defaultRating = 0.0f;
-
     private final RachaRepository rachaRepository;
     private final RachaMemberRepository rachaMemberRepository;
 
@@ -25,6 +23,8 @@ public class RachaService {
     }
 
     public Racha create(String name, String description, Usuario owner) {
+        final float defaultRating = 0.0f;
+
         var newRacha = new Racha();
         newRacha.setName(name);
         newRacha.setDescription(description);
