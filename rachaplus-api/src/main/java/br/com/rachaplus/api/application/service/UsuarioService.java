@@ -6,6 +6,8 @@ import br.com.rachaplus.api.domain.Usuario;
 import br.com.rachaplus.api.domain.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -24,7 +26,7 @@ public class UsuarioService {
         var usuarioExistente = usuarioRepository.findByEmail(dadosNovoUsuario.email());
 
         if (usuarioExistente.isPresent()) {
-            throw new RuntimeException("Já existe um usuário com este email");
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com este email");
         }
 
         var novoUsuario = new Usuario();
