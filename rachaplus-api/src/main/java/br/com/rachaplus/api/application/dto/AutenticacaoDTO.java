@@ -12,5 +12,4 @@ public record AutenticacaoDTO(
         @NotBlank(message = "A senha é obrigatória")
         @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
         String senha
-) {
-}
+) {}
