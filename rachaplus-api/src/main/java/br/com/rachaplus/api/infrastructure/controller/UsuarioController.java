@@ -3,6 +3,8 @@ package br.com.rachaplus.api.infrastructure.controller;
 import br.com.rachaplus.api.application.dto.CadastroUsuarioDTO;
 import br.com.rachaplus.api.application.dto.UsuarioResponseDTO;
 import br.com.rachaplus.api.application.service.UsuarioService;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -10,6 +12,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+@Tag(name = "Usuários", description = "Endpoints para gerenciamento e cadastro de usuários")
 @RestController
 @RequestMapping("/api/v1/users")
 public class UsuarioController {
@@ -20,6 +23,7 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    @Operation(summary = "Cadastrar Usuário", description = "Cadastra um novo usuário na plataforma RachaPlus")
     @PostMapping
     public ResponseEntity<UsuarioResponseDTO> cadastrar(@RequestBody @Valid CadastroUsuarioDTO dadosNovoUsuario) {
         var usuarioResponseDTO = usuarioService.cadastrar(dadosNovoUsuario);
