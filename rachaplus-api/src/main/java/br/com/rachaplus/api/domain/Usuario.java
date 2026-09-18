@@ -20,8 +20,8 @@ public class Usuario implements UserDetails {
     @GeneratedValue(strategy = GenerationType.UUID)
     private java.util.UUID id;
 
-    @Column(nullable = false)
-    private String nome;
+    @Column(nullable = false, unique = true)
+    private String username;
 
     @Column(nullable = false, unique = true)
     private String email;

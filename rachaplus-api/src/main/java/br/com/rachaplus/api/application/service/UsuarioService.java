@@ -30,7 +30,7 @@ public class UsuarioService {
         }
 
         var novoUsuario = new Usuario();
-        novoUsuario.setNome(dadosNovoUsuario.nome());
+        novoUsuario.setUsername(dadosNovoUsuario.username());
         novoUsuario.setEmail(dadosNovoUsuario.email());
         novoUsuario.setSenha(passwordEncoder.encode(dadosNovoUsuario.senha()));
 
