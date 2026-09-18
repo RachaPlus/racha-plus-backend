@@ -29,6 +29,12 @@ public class UsuarioService {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com este email");
         }
 
+        var usernameExistente = usuarioRepository.findByUsername(dadosNovoUsuario.username());
+
+        if (usernameExistente.isPresent()) {
+            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este nome de usuário já está em uso");
+        }
+
         var novoUsuario = new Usuario();
         novoUsuario.setUsername(dadosNovoUsuario.username());
         novoUsuario.setEmail(dadosNovoUsuario.email());
