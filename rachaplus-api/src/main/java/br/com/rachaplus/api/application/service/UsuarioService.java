@@ -26,13 +26,13 @@ public class UsuarioService {
         var usuarioExistente = usuarioRepository.findByEmail(dadosNovoUsuario.email());
 
         if (usuarioExistente.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Já existe um usuário com este email");
+            throw new br.com.rachaplus.api.domain.exception.ConflitoRegistroException("Já existe um usuário com este email");
         }
 
         var usernameExistente = usuarioRepository.findByUsername(dadosNovoUsuario.username());
 
         if (usernameExistente.isPresent()) {
-            throw new ResponseStatusException(HttpStatus.CONFLICT, "Este nome de usuário já está em uso");
+            throw new br.com.rachaplus.api.domain.exception.ConflitoRegistroException("Este nome de usuário já está em uso");
         }
 
         var novoUsuario = new Usuario();
