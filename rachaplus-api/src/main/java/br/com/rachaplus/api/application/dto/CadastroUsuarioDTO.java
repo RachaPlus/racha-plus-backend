@@ -17,5 +17,6 @@ public record CadastroUsuarioDTO(
 
         @NotBlank(message = "A senha é obrigatória")
         @Size(min = 8, message = "A senha deve ter no mínimo 8 caracteres")
+        @Pattern(regexp = "^(?=.*[A-Za-z])(?=.*\\d).+$", message = "A senha deve conter pelo menos uma letra e um número")
         String senha
 ) {}
