@@ -6,6 +6,8 @@ import br.com.rachaplus.api.domain.Usuario;
 import br.com.rachaplus.api.domain.repository.UsuarioRepository;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.http.HttpStatus;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Optional;
 
@@ -24,11 +26,17 @@ public class UsuarioService {
         var usuarioExistente = usuarioRepository.findByEmail(dadosNovoUsuario.email());
 
         if (usuarioExistente.isPresent()) {
-            throw new RuntimeException("Já existe um usuário com este email");
+            throw new br.com.rachaplus.api.domain.exception.ConflitoRegistroException("Já existe um usuário com este email");
+        }
+
+        var usernameExistente = usuarioRepository.findByUsername(dadosNovoUsuario.username());
+
+        if (usernameExistente.isPresent()) {
+            throw new br.com.rachaplus.api.domain.exception.ConflitoRegistroException("Este nome de usuário já está em uso");
         }
 
         var novoUsuario = new Usuario();
-        novoUsuario.setNome(dadosNovoUsuario.nome());
+        novoUsuario.setUsername(dadosNovoUsuario.username());
         novoUsuario.setEmail(dadosNovoUsuario.email());
         novoUsuario.setSenha(passwordEncoder.encode(dadosNovoUsuario.senha()));
 

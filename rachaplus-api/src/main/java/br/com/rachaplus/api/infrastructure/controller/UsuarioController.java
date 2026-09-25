@@ -21,9 +21,13 @@ public class UsuarioController {
     }
 
     @PostMapping
-    public ResponseEntity<UsuarioResponseDTO> cadastrar(@RequestBody @Valid CadastroUsuarioDTO dadosNovoUsuario) {
+    public ResponseEntity<UsuarioResponseDTO> cadastrar(
+            @RequestBody @Valid CadastroUsuarioDTO dadosNovoUsuario,
+            org.springframework.web.util.UriComponentsBuilder uriBuilder) {
         var usuarioResponseDTO = usuarioService.cadastrar(dadosNovoUsuario);
 
-        return ResponseEntity.status(201).body(usuarioResponseDTO);
+        var uri = uriBuilder.path("/api/v1/users/{id}").buildAndExpand(usuarioResponseDTO.id()).toUri();
+
+        return ResponseEntity.created(uri).body(usuarioResponseDTO);
     }
 }

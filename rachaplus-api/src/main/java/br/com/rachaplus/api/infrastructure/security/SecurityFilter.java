@@ -9,6 +9,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import java.io.IOException;
 
@@ -33,7 +34,7 @@ public class SecurityFilter extends OncePerRequestFilter {
             var subject = tokenService.getSubject(tokenJWT);
 
             // 3. Busca o usuário no banco para confirmar que ele ainda existe/está ativo
-            var usuario = repository.findByEmail(subject).get();
+            var usuario = repository.findByEmail(subject).orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
 
             // 4. Cria o objeto de autenticação do Spring e "loga" o usuário no contexto da requisição
             var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
