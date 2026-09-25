@@ -4,10 +4,10 @@ import br.com.rachaplus.api.domain.Usuario;
 
 public record UsuarioResponseDTO(
         java.util.UUID id,
-        String nome,
+        String username,
         String email
 ) {
     public UsuarioResponseDTO(Usuario usuario) {
-        this(usuario.getId(), usuario.getNome(), usuario.getEmail());
+        this(usuario.getId(), usuario.getUsername(), usuario.getEmail());
     }
 }
