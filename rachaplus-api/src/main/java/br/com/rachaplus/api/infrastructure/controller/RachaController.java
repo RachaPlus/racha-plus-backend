@@ -1,6 +1,7 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.CreateRachaDTO;
+import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
 import br.com.rachaplus.api.application.dto.RachaMemberResponseDTO;
 import br.com.rachaplus.api.application.dto.RachaResponseDTO;
 import br.com.rachaplus.api.application.service.RachaService;
@@ -56,5 +57,21 @@ public class RachaController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<RachaMemberResponseDTO> addMember(
+            @PathVariable UUID id,
+            @RequestBody @Valid CreateRachaMemberDTO newMemberData,
+            UriComponentsBuilder uriBuilder) {
+
+        // Chama o service que criamos no passo anterior
+        var savedMember = rachaService.adicionarJogador(id, newMemberData);
+
+        // Constrói a URI de retorno padrão (201 Created)
+        var uri = uriBuilder.path("/api/v1/rachas/{id}/members/{memberId}")
+                .buildAndExpand(id, savedMember.getId()).toUri();
+
+        return ResponseEntity.created(uri).body(new RachaMemberResponseDTO(savedMember));
     }
 }
