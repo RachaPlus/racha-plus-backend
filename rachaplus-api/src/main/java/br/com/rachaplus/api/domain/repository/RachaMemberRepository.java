@@ -1,6 +1,7 @@
 package br.com.rachaplus.api.domain.repository;
 
 import br.com.rachaplus.api.domain.RachaMember;
+import br.com.rachaplus.api.domain.RachaRole;
 import br.com.rachaplus.api.domain.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,4 +14,6 @@ public interface RachaMemberRepository extends JpaRepository<RachaMember, UUID> 
     List<RachaMember> findAllByRachaId(UUID rachaId);
 
     boolean existsByRachaIdAndUserId(UUID rachaId, UUID userId);
+
+    List<RachaMember> findAllByUserAndRole(Usuario user, RachaRole role);
 }

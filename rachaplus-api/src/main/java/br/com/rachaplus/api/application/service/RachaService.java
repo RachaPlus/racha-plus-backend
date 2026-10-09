@@ -46,6 +46,15 @@ public class RachaService {
         return rachaMemberRepository.findAllByUser(user);
     }
 
+
+    public List<Racha> listarRachasCriadosPor(Usuario user) {
+        return rachaMemberRepository.findAllByUserAndRole(user, RachaRole.ADMIN)
+                .stream()
+                .map(RachaMember::getRacha)
+                .toList();
+    }
+
+
     public List<RachaMember> listMembers(UUID rachaId, Usuario requester) {
         boolean isMember = rachaMemberRepository.existsByRachaIdAndUserId(rachaId, requester.getId());
 
