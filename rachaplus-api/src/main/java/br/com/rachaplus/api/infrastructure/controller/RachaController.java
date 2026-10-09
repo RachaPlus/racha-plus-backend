@@ -57,21 +57,4 @@ public class RachaController {
 
         return ResponseEntity.ok(response);
     }
-
-
-    @GetMapping("/meus")
-    public ResponseEntity<List<RachaResponseDTO>> listarMeusRachasCriados() {
-        var user = (Usuario) SecurityContextHolder.getContext()
-                .getAuthentication()
-                .getPrincipal();
-
-        var rachas = rachaService.listarRachasCriadosPor(user);
-
-        var response = rachas.stream()
-                .map(RachaResponseDTO::new)
-                .toList();
-
-        return ResponseEntity.ok(response);
-    }
-
 }

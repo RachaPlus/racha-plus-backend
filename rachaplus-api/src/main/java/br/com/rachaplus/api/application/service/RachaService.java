@@ -1,5 +1,6 @@
 package br.com.rachaplus.api.application.service;
 
+import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
 import br.com.rachaplus.api.domain.Racha;
 import br.com.rachaplus.api.domain.RachaMember;
 import br.com.rachaplus.api.domain.RachaRole;
@@ -62,5 +63,25 @@ public class RachaService {
         }
 
         return rachaMemberRepository.findAllByRachaId(rachaId);
+    }
+
+    public RachaMember adicionarJogador(UUID rachaId, CreateRachaMemberDTO dto) {
+        // 1. Busca o racha pelo UUID
+        Racha racha = rachaRepository.findById(rachaId)
+                .orElseThrow(() -> new RuntimeException("Racha não encontrado"));
+
+        // 2. Instancia o novo jogador (sem vincular a um Usuario do sistema)
+        RachaMember novoJogador = new RachaMember();
+        novoJogador.setNome(dto.nome()); // Use dto.getNome() se não estiver usando 'record'
+        novoJogador.setRacha(racha);
+
+        // Mantendo o padrão de nota inicial do seu método create
+        novoJogador.setRachaRating(0.0f);
+
+        // Defina o role padrão para um jogador comum (ajuste se o nome do seu enum for diferente)
+        // novoJogador.setRole(RachaRole.PLAYER);
+
+        // 3. Salva e retorna a entidade
+        return rachaMemberRepository.save(novoJogador);
     }
 }
