@@ -29,4 +29,7 @@ public class RachaMember {
 
     @Enumerated(EnumType.STRING)
     private RachaRole role;
+
+    @Column(name = "posicao")
+    private String posicao;
 }
