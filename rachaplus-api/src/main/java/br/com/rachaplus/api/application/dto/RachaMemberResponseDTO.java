@@ -18,7 +18,7 @@ public record RachaMemberResponseDTO(
                 member.getRacha().getId(),
                 member.getRacha().getName(),
                 member.getUser().getId(),
-                member.getUser().getNome(),
+                member.getUser().getUsername(),
                 member.getRachaRating(),
                 member.getRole()
         );
