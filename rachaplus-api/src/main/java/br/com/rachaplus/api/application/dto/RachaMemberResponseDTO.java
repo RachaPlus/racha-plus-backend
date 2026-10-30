@@ -11,16 +11,14 @@ public record RachaMemberResponseDTO(
         UUID userId,
         String userName,
         float rachaRating,
-        RachaRole role
-) {
+        RachaRole role) {
     public RachaMemberResponseDTO(RachaMember member) {
         this(
                 member.getRacha().getId(),
                 member.getRacha().getName(),
                 member.getUser().getId(),
-                member.getUser().getNome(),
+                member.getUser().getNomeUsuario(),
                 member.getRachaRating(),
-                member.getRole()
-        );
+                member.getRole());
     }
 }
