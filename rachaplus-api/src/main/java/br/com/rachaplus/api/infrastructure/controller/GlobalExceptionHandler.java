@@ -26,4 +26,9 @@ public class GlobalExceptionHandler {
     public ResponseEntity<String> tratarConflitoRegistro(br.com.rachaplus.api.domain.exception.ConflitoRegistroException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ex.getMessage());
     }
+
+    @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
+    public ResponseEntity<String> tratarBadCredentials(org.springframework.security.authentication.BadCredentialsException ex) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("Credenciais inválidas");
+    }
 }
