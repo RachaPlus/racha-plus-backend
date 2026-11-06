@@ -29,20 +29,22 @@ public class RachaController {
     public ResponseEntity<RachaResponseDTO> create(@RequestBody @Valid CreateRachaDTO newRachaData, UriComponentsBuilder uriBuilder) {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        var racha = rachaService.create(newRachaData.name(), newRachaData.description(), user);
+        var racha = rachaService.create(
+                newRachaData.nome(),
+                newRachaData.descricao(),
+                newRachaData.esporte(),
+                user
+        );
+        var confirmados = rachaService.contarMembros(racha.getId());
 
         var uri = uriBuilder.path("/api/v1/rachas/{id}").buildAndExpand(racha.getId()).toUri();
-        return ResponseEntity.created(uri).body(new RachaResponseDTO(racha));
+        return ResponseEntity.created(uri).body(new RachaResponseDTO(racha, confirmados));
     }
 
     @GetMapping
-    public ResponseEntity<List<RachaMemberResponseDTO>> listMyRachas() {
+    public ResponseEntity<List<RachaResponseDTO>> listMyRachas() {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var members = rachaService.listByUser(user);
-
-        var response = members.stream()
-                .map(RachaMemberResponseDTO::new)
-                .toList();
+        var response = rachaService.listarRachasDoUsuario(user);
 
         return ResponseEntity.ok(response);
     }
