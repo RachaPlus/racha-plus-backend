@@ -1,6 +1,7 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.CreateRachaDTO;
+import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
 import br.com.rachaplus.api.application.dto.RachaMemberResponseDTO;
 import br.com.rachaplus.api.application.dto.RachaResponseDTO;
 import br.com.rachaplus.api.application.service.RachaService;
@@ -32,21 +33,23 @@ public class RachaController {
     public ResponseEntity<RachaResponseDTO> create(@RequestBody @Valid CreateRachaDTO newRachaData, UriComponentsBuilder uriBuilder) {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        var racha = rachaService.create(newRachaData.name(), newRachaData.description(), user);
+        var racha = rachaService.create(
+                newRachaData.nome(),
+                newRachaData.descricao(),
+                newRachaData.esporte(),
+                user
+        );
+        var confirmados = rachaService.contarMembros(racha.getId());
 
         var uri = uriBuilder.path("/api/v1/rachas/{id}").buildAndExpand(racha.getId()).toUri();
-        return ResponseEntity.created(uri).body(new RachaResponseDTO(racha));
+        return ResponseEntity.created(uri).body(new RachaResponseDTO(racha, confirmados));
     }
 
     @Operation(summary = "Listar meus Rachas", description = "Lista todos os rachas em que o usuário autenticado é membro ou organizador")
     @GetMapping
-    public ResponseEntity<List<RachaMemberResponseDTO>> listMyRachas() {
+    public ResponseEntity<List<RachaResponseDTO>> listMyRachas() {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var members = rachaService.listByUser(user);
-
-        var response = members.stream()
-                .map(RachaMemberResponseDTO::new)
-                .toList();
+        var response = rachaService.listarRachasDoUsuario(user);
 
         return ResponseEntity.ok(response);
     }
@@ -62,5 +65,21 @@ public class RachaController {
                 .toList();
 
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/{id}/members")
+    public ResponseEntity<RachaMemberResponseDTO> addMember(
+            @PathVariable UUID id,
+            @RequestBody @Valid CreateRachaMemberDTO newMemberData,
+            UriComponentsBuilder uriBuilder) {
+
+        // Chama o service que criamos no passo anterior
+        var savedMember = rachaService.adicionarJogador(id, newMemberData);
+
+        // Constrói a URI de retorno padrão (201 Created)
+        var uri = uriBuilder.path("/api/v1/rachas/{id}/members/{memberId}")
+                .buildAndExpand(id, savedMember.getId()).toUri();
+
+        return ResponseEntity.created(uri).body(new RachaMemberResponseDTO(savedMember));
     }
 }

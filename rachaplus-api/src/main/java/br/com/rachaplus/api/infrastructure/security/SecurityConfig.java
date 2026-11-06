@@ -44,8 +44,8 @@ public class SecurityConfig {
                 .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/api/v1/users").permitAll();
-                    req.requestMatchers(HttpMethod.POST, "/api/v1/auth/login").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/api/v1/users", "/api/v1/auth/login").permitAll();
+                    req.requestMatchers("/error").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
                     req.anyRequest().authenticated();
                 })
@@ -53,14 +53,14 @@ public class SecurityConfig {
                 .build();
     }
 
-    // Configuração do CORS (lê a variável CORS_ALLOWED_ORIGINS)
+    // Configuração do CORS (origens vêm do application.properties)
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${api.cors.allowed-origins:http://localhost:3000,https://rachaplus.site,https://www.rachaplus.site}") String[] allowedOrigins) {
+            @Value("${api.cors.allowed-origins}") String[] allowedOrigins) {
 
         CorsConfiguration config = new CorsConfiguration();
-        config.setAllowedOrigins(Arrays.asList(allowedOrigins));
-        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"));
+        config.setAllowedOrigins(List.of(allowedOrigins));
+        config.setAllowedMethods(List.of("GET", "POST", "PUT", "DELETE", "OPTIONS"));
         config.setAllowedHeaders(List.of("*"));
         config.setAllowCredentials(true);
 

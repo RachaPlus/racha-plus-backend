@@ -20,9 +20,16 @@ public class RachaMember {
     @JoinColumn(name = "user_id")
     private Usuario user;
 
+    // ATRIBUTO PARA ARMAZENAR O NOME DENTRO DO RACHA
+    @Column(name = "nome")
+    private String nome;
+
     @Column(name = "racha_rating")
     private float rachaRating;
 
     @Enumerated(EnumType.STRING)
     private RachaRole role;
+
+    @Column(name = "posicao")
+    private String posicao;
 }

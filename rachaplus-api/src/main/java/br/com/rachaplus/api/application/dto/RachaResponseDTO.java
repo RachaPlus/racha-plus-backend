@@ -7,11 +7,20 @@ import java.util.UUID;
 
 public record RachaResponseDTO(
         UUID id,
-        String name,
-        String description,
-        LocalDateTime createdAt
+        String nome,
+        String descricao,
+        String esporte,
+        long confirmados,
+        LocalDateTime dataCriacao
 ) {
-    public RachaResponseDTO(Racha racha) {
-        this(racha.getId(), racha.getName(), racha.getDescription(), racha.getCreatedAt());
+    public RachaResponseDTO(Racha racha, long confirmados) {
+        this(
+                racha.getId(),
+                racha.getNome(),
+                racha.getDescricao(),
+                racha.getEsporte(),
+                confirmados,
+                racha.getDataCriacao()
+        );
     }
 }
