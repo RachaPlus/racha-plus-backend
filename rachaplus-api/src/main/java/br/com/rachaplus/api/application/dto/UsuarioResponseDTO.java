@@ -8,6 +8,6 @@ public record UsuarioResponseDTO(
         String email
 ) {
     public UsuarioResponseDTO(Usuario usuario) {
-        this(usuario.getId(), usuario.getUsername(), usuario.getEmail());
+        this(usuario.getId(), usuario.getNomeUsuario(), usuario.getEmail());
     }
 }
