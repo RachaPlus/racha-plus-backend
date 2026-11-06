@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+@Tag(name = "Usuários", description = "Endpoints para gerenciamento e cadastro de usuários")
 @RestController
 @RequestMapping("/api/v1/users")
 public class UsuarioController {
@@ -19,6 +20,7 @@ public class UsuarioController {
         this.usuarioService = usuarioService;
     }
 
+    @Operation(summary = "Cadastrar Usuário", description = "Cadastra um novo usuário na plataforma RachaPlus")
     @PostMapping
     public ResponseEntity<UsuarioResponseDTO> cadastrar(
             @RequestBody @Valid CadastroUsuarioDTO dadosNovoUsuario,

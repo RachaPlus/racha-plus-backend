@@ -48,6 +48,7 @@ public class Usuario implements UserDetails {
         return this.email;
     }
 
+    // Retorna o nome de usuário exibido (o getUsername() é usado pelo Spring Security e retorna o email)
     public String getNomeUsuario() {
         return this.username;
     }

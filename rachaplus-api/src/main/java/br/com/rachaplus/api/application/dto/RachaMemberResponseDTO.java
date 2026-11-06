@@ -24,7 +24,6 @@ public record RachaMemberResponseDTO(
                 member.getUser() != null ? member.getUser().getNomeUsuario() : member.getNome(),
                 member.getPosicao(),
                 member.getRachaRating(),
-                member.getRole()
-        );
+                member.getRole());
     }
 }
