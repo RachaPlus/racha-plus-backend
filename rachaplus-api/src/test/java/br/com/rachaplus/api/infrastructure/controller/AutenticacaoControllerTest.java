@@ -2,6 +2,7 @@ package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.AutenticacaoDTO;
 import br.com.rachaplus.api.domain.Usuario;
+import br.com.rachaplus.api.domain.repository.UsuarioRepository;
 import br.com.rachaplus.api.infrastructure.security.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
@@ -9,11 +10,11 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import static org.mockito.ArgumentMatchers.any;
@@ -32,11 +33,14 @@ class AutenticacaoControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
+    @MockBean
     private AuthenticationManager authenticationManager;
 
-    @MockitoBean
+    @MockBean
     private TokenService tokenService;
+
+    @MockBean
+    private UsuarioRepository usuarioRepository;
 
     @Test
     @DisplayName("Deve autenticar com sucesso e retornar HTTP 200 com Token JWT")

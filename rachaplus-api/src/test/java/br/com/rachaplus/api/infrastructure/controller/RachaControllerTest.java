@@ -6,6 +6,8 @@ import br.com.rachaplus.api.domain.Racha;
 import br.com.rachaplus.api.domain.RachaMember;
 import br.com.rachaplus.api.domain.RachaRole;
 import br.com.rachaplus.api.domain.Usuario;
+import br.com.rachaplus.api.domain.repository.UsuarioRepository;
+import br.com.rachaplus.api.infrastructure.security.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,10 +16,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
@@ -43,8 +45,14 @@ class RachaControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
+    @MockBean
     private RachaService rachaService;
+
+    @MockBean
+    private TokenService tokenService;
+
+    @MockBean
+    private UsuarioRepository usuarioRepository;
 
     private Usuario usuarioLogado;
 

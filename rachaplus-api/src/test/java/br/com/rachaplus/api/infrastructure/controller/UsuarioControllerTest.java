@@ -3,14 +3,16 @@ package br.com.rachaplus.api.infrastructure.controller;
 import br.com.rachaplus.api.application.dto.CadastroUsuarioDTO;
 import br.com.rachaplus.api.application.dto.UsuarioResponseDTO;
 import br.com.rachaplus.api.application.service.UsuarioService;
+import br.com.rachaplus.api.domain.repository.UsuarioRepository;
+import br.com.rachaplus.api.infrastructure.security.TokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.util.UUID;
@@ -32,8 +34,14 @@ class UsuarioControllerTest {
     @Autowired
     private ObjectMapper objectMapper;
 
-    @MockitoBean
+    @MockBean
     private UsuarioService usuarioService;
+
+    @MockBean
+    private TokenService tokenService;
+
+    @MockBean
+    private UsuarioRepository usuarioRepository;
 
     @Test
     @DisplayName("Deve cadastrar usuário com sucesso e retornar HTTP 201 Created com header Location")
