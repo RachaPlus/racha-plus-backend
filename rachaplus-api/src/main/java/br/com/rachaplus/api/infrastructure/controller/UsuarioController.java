@@ -4,6 +4,8 @@ import br.com.rachaplus.api.application.dto.CadastroUsuarioDTO;
 import br.com.rachaplus.api.application.dto.UsuarioResponseDTO;
 import br.com.rachaplus.api.application.service.UsuarioService;
 import br.com.rachaplus.api.domain.Usuario;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
