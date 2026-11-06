@@ -5,6 +5,7 @@ import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.UUID;
 
 @Entity
 @Table(name = "rachas")
@@ -13,15 +14,18 @@ public class Racha {
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
-    private java.util.UUID id;
+    private UUID id;
 
-    @Column(nullable = false)
-    private String name;
+    @Column(name = "name", nullable = false)
+    private String nome;
 
-    @Column
-    private String description;
+    @Column(name = "description")
+    private String descricao;
+
+    @Column(name = "esporte")
+    private String esporte;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
-    private LocalDateTime createdAt;
+    private LocalDateTime dataCriacao;
 }

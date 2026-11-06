@@ -1,6 +1,7 @@
 package br.com.rachaplus.api.application.service;
 
 import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
+import br.com.rachaplus.api.application.dto.RachaResponseDTO;
 import br.com.rachaplus.api.application.dto.UpdatePlacarDTO;
 import br.com.rachaplus.api.application.dto.UpdateRachaMemberDTO;
 import br.com.rachaplus.api.domain.*;
@@ -8,6 +9,7 @@ import br.com.rachaplus.api.domain.repository.PartidaRepository;
 import br.com.rachaplus.api.domain.repository.RachaMemberRepository;
 import br.com.rachaplus.api.domain.repository.RachaRepository;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
@@ -25,23 +27,38 @@ public class RachaService {
         this.partidaRepository = partidaRepository;
     }
 
-    public Racha create(String name, String description, Usuario owner) {
+    @Transactional
+    public Racha create(String nome, String descricao, String esporte, Usuario owner) {
         final float defaultRating = 0.0f;
 
         var newRacha = new Racha();
-        newRacha.setName(name);
-        newRacha.setDescription(description);
-        var savedRacha = rachaRepository.save(newRacha);
+        newRacha.setNome(nome);
+        newRacha.setDescricao(descricao);
+        newRacha.setEsporte(esporte);
+        var savedRacha = rachaRepository.saveAndFlush(newRacha);
 
         var membership = new RachaMember();
         membership.setRacha(savedRacha);
         membership.setUser(owner);
+        membership.setNome(owner.getNomeUsuario());
         membership.setRole(RachaRole.ADMIN);
         membership.setRachaRating(defaultRating);
 
         rachaMemberRepository.save(membership);
 
         return savedRacha;
+    }
+
+    public long contarMembros(UUID rachaId) {
+        return rachaMemberRepository.countByRachaId(rachaId);
+    }
+
+    public List<RachaResponseDTO> listarRachasDoUsuario(Usuario user) {
+        return rachaMemberRepository.findAllByUser(user)
+                .stream()
+                .map(RachaMember::getRacha)
+                .map(racha -> new RachaResponseDTO(racha, rachaMemberRepository.countByRachaId(racha.getId())))
+                .toList();
     }
 
     public List<RachaMember> listByUser(Usuario user) {
@@ -81,7 +98,7 @@ public class RachaService {
         novoJogador.setRachaRating(0.0f);
 
         // Defina o role padrão para um jogador comum (ajuste se o nome do seu enum for diferente)
-        // novoJogador.setRole(RachaRole.PLAYER);
+        novoJogador.setRole(RachaRole.PLAYER);
 
         // 3. Salva e retorna a entidade
         return rachaMemberRepository.save(novoJogador);

@@ -13,6 +13,8 @@ public interface RachaMemberRepository extends JpaRepository<RachaMember, UUID> 
 
     List<RachaMember> findAllByRachaId(UUID rachaId);
 
+    long countByRachaId(UUID rachaId);
+
     boolean existsByRachaIdAndUserId(UUID rachaId, UUID userId);
 
     List<RachaMember> findAllByUserAndRole(Usuario user, RachaRole role);
