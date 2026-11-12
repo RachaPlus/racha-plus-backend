@@ -18,17 +18,26 @@ public class GlobalExceptionHandler {
         var erros = ex.getFieldErrors().stream()
                 .map(erro -> new ValidacaoErroDTO(erro.getField(), erro.getDefaultMessage()))
                 .toList();
-        
+
         return ResponseEntity.badRequest().body(erros);
     }
 
     @ExceptionHandler(br.com.rachaplus.api.domain.exception.ConflitoRegistroException.class)
-    public ResponseEntity<String> tratarConflitoRegistro(br.com.rachaplus.api.domain.exception.ConflitoRegistroException ex) {
+    public ResponseEntity<String> tratarConflitoRegistro(
+            br.com.rachaplus.api.domain.exception.ConflitoRegistroException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
     @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
-    public ResponseEntity<String> tratarBadCredentials(org.springframework.security.authentication.BadCredentialsException ex) {
+    public ResponseEntity<String> tratarBadCredentials(
+            org.springframework.security.authentication.BadCredentialsException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("Credenciais inválidas");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> tratarErroInesperado(Exception ex) {
+        ex.printStackTrace(); // Imprime a stack trace nos logs para diagnóstico
+        return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro interno no servidor: " + ex.getMessage());
     }
 }
