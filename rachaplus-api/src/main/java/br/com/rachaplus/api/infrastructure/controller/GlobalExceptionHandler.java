@@ -1,6 +1,8 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.ValidacaoErroDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -12,6 +14,8 @@ import java.util.List;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ValidacaoErroDTO>> tratarErroValidacao(MethodArgumentNotValidException ex) {
@@ -36,8 +40,8 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(Exception.class)
     public ResponseEntity<String> tratarErroInesperado(Exception ex) {
-        ex.printStackTrace(); // Imprime a stack trace nos logs para diagnóstico
+        log.error("Erro interno inesperado no servidor", ex);
         return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
-                .body("Erro interno no servidor: " + ex.getMessage());
+                .body("Erro interno no servidor. Tente novamente mais tarde.");
     }
 }
