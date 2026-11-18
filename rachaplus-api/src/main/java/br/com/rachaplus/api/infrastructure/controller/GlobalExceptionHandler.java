@@ -1,6 +1,8 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.ValidacaoErroDTO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -13,22 +15,33 @@ import java.util.List;
 @RestControllerAdvice
 public class GlobalExceptionHandler {
 
+    private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<List<ValidacaoErroDTO>> tratarErroValidacao(MethodArgumentNotValidException ex) {
         var erros = ex.getFieldErrors().stream()
                 .map(erro -> new ValidacaoErroDTO(erro.getField(), erro.getDefaultMessage()))
                 .toList();
-        
+
         return ResponseEntity.badRequest().body(erros);
     }
 
     @ExceptionHandler(br.com.rachaplus.api.domain.exception.ConflitoRegistroException.class)
-    public ResponseEntity<String> tratarConflitoRegistro(br.com.rachaplus.api.domain.exception.ConflitoRegistroException ex) {
+    public ResponseEntity<String> tratarConflitoRegistro(
+            br.com.rachaplus.api.domain.exception.ConflitoRegistroException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CONFLICT).body(ex.getMessage());
     }
 
     @ExceptionHandler(org.springframework.security.authentication.BadCredentialsException.class)
-    public ResponseEntity<String> tratarBadCredentials(org.springframework.security.authentication.BadCredentialsException ex) {
+    public ResponseEntity<String> tratarBadCredentials(
+            org.springframework.security.authentication.BadCredentialsException ex) {
         return ResponseEntity.status(org.springframework.http.HttpStatus.UNAUTHORIZED).body("Credenciais inválidas");
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<String> tratarErroInesperado(Exception ex) {
+        log.error("Erro interno inesperado no servidor", ex);
+        return ResponseEntity.status(org.springframework.http.HttpStatus.INTERNAL_SERVER_ERROR)
+                .body("Erro interno no servidor. Tente novamente mais tarde.");
     }
 }
