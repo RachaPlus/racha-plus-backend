@@ -245,4 +245,17 @@ class RachaServiceTest {
                                 """))
                 .andExpect(status().isBadRequest());
     }
+
+    @Test
+    void naoDeveExporDetalhesInternosOuSqlEmErroInesperado() {
+        GlobalExceptionHandler handler = new GlobalExceptionHandler();
+        var response = handler.tratarErroInesperado(
+                new RuntimeException("ERROR: null value in column \"nome\" of relation \"usuarios\" $2a$10$hashSecreto")
+        );
+
+        assertEquals(500, response.getStatusCode().value());
+        assertEquals("Erro interno no servidor. Tente novamente mais tarde.", response.getBody());
+        assertFalse(response.getBody().contains("usuarios"));
+        assertFalse(response.getBody().contains("$2a$10$"));
+    }
 }
