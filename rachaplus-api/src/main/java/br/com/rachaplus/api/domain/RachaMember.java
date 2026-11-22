@@ -30,6 +30,7 @@ public class RachaMember {
     @Enumerated(EnumType.STRING)
     private RachaRole role;
 
+    @Enumerated(EnumType.STRING)
     @Column(name = "posicao")
-    private String posicao;
+    private Posicao posicao;
 }

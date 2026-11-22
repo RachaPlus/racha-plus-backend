@@ -38,5 +38,21 @@ public class DatabaseSchemaMigrationRunner implements ApplicationRunner {
         } catch (Exception ex) {
             log.debug("Sincronizacao opcional usuarios.nome -> username ignorada: {}", ex.getMessage());
         }
+
+        // racha_members.posicao era texto livre e agora e o enum Posicao.
+        // Padroniza para maiusculo e limpa valores que nao existem no enum, para nao quebrar a leitura.
+        try {
+            String posicoesValidas = java.util.Arrays.stream(br.com.rachaplus.api.domain.Posicao.values())
+                    .map(p -> "'" + p.name() + "'")
+                    .collect(java.util.stream.Collectors.joining(","));
+            jdbcTemplate.execute("UPDATE racha_members SET posicao = UPPER(TRIM(posicao)) WHERE posicao IS NOT NULL");
+            int limpas = jdbcTemplate.update(
+                    "UPDATE racha_members SET posicao = NULL WHERE posicao IS NOT NULL AND posicao NOT IN (" + posicoesValidas + ")");
+            if (limpas > 0) {
+                log.info("Migracao de schema: {} posicoes legadas invalidas foram limpas em racha_members", limpas);
+            }
+        } catch (Exception ex) {
+            log.debug("Ajuste de racha_members.posicao ignorado: {}", ex.getMessage());
+        }
     }
 }

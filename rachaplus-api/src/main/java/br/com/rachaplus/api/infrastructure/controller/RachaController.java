@@ -1,9 +1,11 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
+import br.com.rachaplus.api.application.dto.AvaliacaoDTO;
 import br.com.rachaplus.api.application.dto.CreateRachaDTO;
 import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
 import br.com.rachaplus.api.application.dto.RachaMemberResponseDTO;
 import br.com.rachaplus.api.application.dto.RachaResponseDTO;
+import br.com.rachaplus.api.application.dto.UpdateRachaMemberDTO;
 import br.com.rachaplus.api.application.service.RachaService;
 import br.com.rachaplus.api.domain.Usuario;
 import io.swagger.v3.oas.annotations.Operation;
@@ -54,32 +56,64 @@ public class RachaController {
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Listar membros do Racha", description = "Lista os membros participantes de um racha específico por ID")
-    @GetMapping("/{id}/members")
-    public ResponseEntity<List<RachaMemberResponseDTO>> listMembers(@PathVariable UUID id) {
-        var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var members = rachaService.listMembers(id, user);
-
-        var response = members.stream()
-                .map(RachaMemberResponseDTO::new)
-                .toList();
-
-        return ResponseEntity.ok(response);
+    @Operation(summary = "Detalhar Racha", description = "Retorna os dados de um racha. O usuário autenticado precisa ser membro")
+    @GetMapping("/{id}")
+    public ResponseEntity<RachaResponseDTO> detail(@PathVariable UUID id) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.buscarRacha(id, user));
     }
 
+    @Operation(summary = "Listar membros do Racha", description = "Lista os membros do racha com OVR (nota), minhaNota e totalAvaliacoes")
+    @GetMapping("/{id}/members")
+    public ResponseEntity<List<RachaMemberResponseDTO>> listMembers(@PathVariable UUID id) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.listMembers(id, user));
+    }
+
+    @Operation(summary = "Adicionar jogador", description = "Adiciona um jogador avulso com posição do esporte do racha e nota inicial opcional (apenas admin)")
     @PostMapping("/{id}/members")
     public ResponseEntity<RachaMemberResponseDTO> addMember(
             @PathVariable UUID id,
             @RequestBody @Valid CreateRachaMemberDTO newMemberData,
             UriComponentsBuilder uriBuilder) {
+        var user = usuarioLogado();
+        var savedMember = rachaService.adicionarJogador(id, newMemberData, user);
 
-        // Chama o service que criamos no passo anterior
-        var savedMember = rachaService.adicionarJogador(id, newMemberData);
-
-        // Constrói a URI de retorno padrão (201 Created)
         var uri = uriBuilder.path("/api/v1/rachas/{id}/members/{memberId}")
-                .buildAndExpand(id, savedMember.getId()).toUri();
+                .buildAndExpand(id, savedMember.id()).toUri();
 
-        return ResponseEntity.created(uri).body(new RachaMemberResponseDTO(savedMember));
+        return ResponseEntity.created(uri).body(savedMember);
+    }
+
+    @Operation(summary = "Editar jogador", description = "Atualiza nome e posição de um jogador do racha (apenas admin)")
+    @PutMapping("/{id}/members/{memberId}")
+    public ResponseEntity<RachaMemberResponseDTO> updateMember(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @RequestBody @Valid UpdateRachaMemberDTO dto) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.atualizarJogador(id, memberId, dto, user));
+    }
+
+    @Operation(summary = "Remover jogador", description = "Remove um jogador do racha e as avaliações que ele recebeu (apenas admin)")
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<Void> removeMember(@PathVariable UUID id, @PathVariable UUID memberId) {
+        var user = usuarioLogado();
+        rachaService.removerJogador(id, memberId, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Avaliar jogador", description = "Cria ou atualiza a nota (0.5 a 5.0, passos de 0.5) do usuário logado para o jogador e recalcula o OVR")
+    @PutMapping("/{id}/members/{memberId}/avaliacao")
+    public ResponseEntity<RachaMemberResponseDTO> rateMember(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @RequestBody @Valid AvaliacaoDTO dto) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.avaliarJogador(id, memberId, dto.nota(), user));
+    }
+
+    private Usuario usuarioLogado() {
+        return (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }
