@@ -1,5 +1,6 @@
 package br.com.rachaplus.api.application.dto;
 
+import br.com.rachaplus.api.domain.Posicao;
 import br.com.rachaplus.api.domain.RachaMember;
 import br.com.rachaplus.api.domain.RachaRole;
 
@@ -11,11 +12,14 @@ public record RachaMemberResponseDTO(
         String nomeRacha,
         UUID usuarioId,
         String nomeJogador,
-        String posicao,
+        Posicao posicao,
         float nota,
+        Float minhaNota,
+        long totalAvaliacoes,
         RachaRole papel
 ) {
-    public RachaMemberResponseDTO(RachaMember member) {
+    // minhaNota = nota dada pelo usuário logado (null se ele ainda não avaliou)
+    public RachaMemberResponseDTO(RachaMember member, Float minhaNota, long totalAvaliacoes) {
         this(
                 member.getId(),
                 member.getRacha().getId(),
@@ -24,6 +28,8 @@ public record RachaMemberResponseDTO(
                 member.getUser() != null ? member.getUser().getNomeUsuario() : member.getNome(),
                 member.getPosicao(),
                 member.getRachaRating(),
+                minhaNota,
+                totalAvaliacoes,
                 member.getRole());
     }
 }

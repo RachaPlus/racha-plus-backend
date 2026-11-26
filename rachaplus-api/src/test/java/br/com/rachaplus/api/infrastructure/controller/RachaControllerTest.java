@@ -4,6 +4,7 @@ import br.com.rachaplus.api.application.dto.CreateRachaDTO;
 import br.com.rachaplus.api.application.dto.RachaMemberResponseDTO;
 import br.com.rachaplus.api.application.dto.RachaResponseDTO;
 import br.com.rachaplus.api.application.service.RachaService;
+import br.com.rachaplus.api.domain.Posicao;
 import br.com.rachaplus.api.domain.Racha;
 import br.com.rachaplus.api.domain.RachaMember;
 import br.com.rachaplus.api.domain.RachaRole;
@@ -143,17 +144,37 @@ class RachaControllerTest {
         member.setId(UUID.randomUUID());
         member.setRacha(racha);
         member.setUser(usuarioLogado);
-        member.setPosicao("Atacante");
+        member.setPosicao(Posicao.ATACANTE);
         member.setRachaRating(4.5f);
         member.setRole(RachaRole.PLAYER);
 
-        when(rachaService.listMembers(eq(rachaId), any(Usuario.class))).thenReturn(List.of(member));
+        when(rachaService.listMembers(eq(rachaId), any(Usuario.class)))
+                .thenReturn(List.of(new RachaMemberResponseDTO(member, 4.5f, 1)));
 
         mockMvc.perform(get("/api/v1/rachas/{id}/members", rachaId))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].rachaId").value(rachaId.toString()))
                 .andExpect(jsonPath("$[0].nomeRacha").value("Pelada Domingo"))
                 .andExpect(jsonPath("$[0].nomeJogador").value("organizador"))
+                .andExpect(jsonPath("$[0].posicao").value("ATACANTE"))
+                .andExpect(jsonPath("$[0].nota").value(4.5))
+                .andExpect(jsonPath("$[0].minhaNota").value(4.5))
+                .andExpect(jsonPath("$[0].totalAvaliacoes").value(1))
                 .andExpect(jsonPath("$[0].papel").value("PLAYER"));
+    }
+
+    @Test
+    @DisplayName("Deve detalhar um racha por ID e retornar HTTP 200")
+    void deveDetalharRacha() throws Exception {
+        var rachaId = UUID.randomUUID();
+        var rachaResponse = new RachaResponseDTO(rachaId, "Vôlei de Sábado", null, "VOLEI", 3L, LocalDateTime.now());
+
+        when(rachaService.buscarRacha(eq(rachaId), any(Usuario.class))).thenReturn(rachaResponse);
+
+        mockMvc.perform(get("/api/v1/rachas/{id}", rachaId))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.id").value(rachaId.toString()))
+                .andExpect(jsonPath("$.esporte").value("VOLEI"))
+                .andExpect(jsonPath("$.confirmados").value(3));
     }
 }
