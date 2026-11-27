@@ -43,4 +43,11 @@ public class UsuarioService {
         var usuarioResponseDTO = new UsuarioResponseDTO(usuarioRepository.save(novoUsuario));
         return usuarioResponseDTO;
     }
+
+    public UsuarioResponseDTO atualizarAvatar(Usuario usuarioAutenticado, String avatarJson) {
+        var usuario = usuarioRepository.findById(usuarioAutenticado.getId())
+                .orElse(usuarioAutenticado);
+        usuario.setAvatarJson(avatarJson);
+        return new UsuarioResponseDTO(usuarioRepository.save(usuario));
+    }
 }

@@ -177,4 +177,70 @@ class RachaControllerTest {
                 .andExpect(jsonPath("$.esporte").value("VOLEI"))
                 .andExpect(jsonPath("$.confirmados").value(3));
     }
+
+    @Test
+    @DisplayName("Deve avaliar jogador no modo AVANCADA por atributos e retornar HTTP 200")
+    void deveAvaliarJogadorModoAvancadoNoController() throws Exception {
+        var rachaId = UUID.randomUUID();
+        var memberId = UUID.randomUUID();
+        var racha = new Racha();
+        racha.setId(rachaId);
+        racha.setNome("Basquete de Domingo");
+        racha.setEsporte("BASQUETE");
+
+        var member = new RachaMember();
+        member.setId(memberId);
+        member.setRacha(racha);
+        member.setNome("Rafael");
+        member.setPosicao(Posicao.ARMADOR);
+        member.setRachaRating(4.4f);
+        member.setRole(RachaRole.PLAYER);
+
+        var attrs = java.util.Map.of(
+                br.com.rachaplus.api.domain.AtributoEsporte.FINALIZACAO, 4.0f,
+                br.com.rachaplus.api.domain.AtributoEsporte.ARREMESSO, 4.5f,
+                br.com.rachaplus.api.domain.AtributoEsporte.CONTROLE_BOLA, 5.0f,
+                br.com.rachaplus.api.domain.AtributoEsporte.PASSE, 5.0f,
+                br.com.rachaplus.api.domain.AtributoEsporte.DEFESA, 3.0f,
+                br.com.rachaplus.api.domain.AtributoEsporte.REBOTE, 1.5f
+        );
+
+        var resposta = new RachaMemberResponseDTO(
+                member,
+                4.4f,
+                br.com.rachaplus.api.domain.TipoAvaliacao.AVANCADA,
+                attrs,
+                attrs,
+                1
+        );
+
+        when(rachaService.avaliarJogador(
+                eq(rachaId),
+                eq(memberId),
+                any(br.com.rachaplus.api.application.dto.AvaliacaoDTO.class),
+                any(Usuario.class)
+        )).thenReturn(resposta);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .put("/api/v1/rachas/{id}/members/{memberId}/avaliacao", rachaId, memberId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tipo": "AVANCADA",
+                                  "atributos": {
+                                    "FINALIZACAO": 4.0,
+                                    "ARREMESSO": 4.5,
+                                    "CONTROLE_BOLA": 5.0,
+                                    "PASSE": 5.0,
+                                    "DEFESA": 3.0,
+                                    "REBOTE": 1.5
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nomeJogador").value("Rafael"))
+                .andExpect(jsonPath("$.nota").value(4.4))
+                .andExpect(jsonPath("$.meuTipoAvaliacao").value("AVANCADA"))
+                .andExpect(jsonPath("$.mediaAtributos.CONTROLE_BOLA").value(5.0));
+    }
 }

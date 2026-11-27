@@ -33,4 +33,7 @@ public class RachaMember {
     @Enumerated(EnumType.STRING)
     @Column(name = "posicao")
     private Posicao posicao;
+
+    @Column(name = "avatar_json", columnDefinition = "TEXT")
+    private String avatarJson;
 }

@@ -45,6 +45,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(req -> {
                     req.requestMatchers(HttpMethod.OPTIONS, "/**").permitAll();
                     req.requestMatchers(HttpMethod.POST, "/api/v1/users", "/api/v1/auth/login").permitAll();
+                    req.requestMatchers(HttpMethod.GET, "/api/v1/rachas/*/convite", "/api/v1/rachas/*/estado").permitAll();
+                    req.requestMatchers(HttpMethod.POST, "/api/v1/rachas/*/entrar").permitAll();
                     req.requestMatchers("/error").permitAll();
                     req.requestMatchers("/v3/api-docs/**", "/swagger-ui/**", "/swagger-ui.html").permitAll();
                     req.anyRequest().authenticated();

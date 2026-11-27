@@ -29,6 +29,9 @@ public class Usuario implements UserDetails {
     @Column(nullable = false)
     private String senha;
 
+    @Column(name = "avatar_json", columnDefinition = "TEXT")
+    private String avatarJson;
+
     @CreationTimestamp
     @Column(name = "data_cadastro", nullable = false, updatable = false)
     private LocalDateTime dataCadastro;

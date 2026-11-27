@@ -14,6 +14,7 @@ public record RachaResponseDTO(
         String esporte,
         LocalDate data,
         LocalTime horario,
+        String status,
         long confirmados,
         LocalDateTime dataCriacao
 ) {
@@ -25,7 +26,20 @@ public record RachaResponseDTO(
             long confirmados,
             LocalDateTime dataCriacao
     ) {
-        this(id, nome, descricao, esporte, null, null, confirmados, dataCriacao);
+        this(id, nome, descricao, esporte, null, null, "ABERTO", confirmados, dataCriacao);
+    }
+
+    public RachaResponseDTO(
+            UUID id,
+            String nome,
+            String descricao,
+            String esporte,
+            LocalDate data,
+            LocalTime horario,
+            long confirmados,
+            LocalDateTime dataCriacao
+    ) {
+        this(id, nome, descricao, esporte, data, horario, "ABERTO", confirmados, dataCriacao);
     }
 
     public RachaResponseDTO(Racha racha, long confirmados) {
@@ -36,6 +50,7 @@ public record RachaResponseDTO(
                 racha.getEsporte(),
                 racha.getData(),
                 racha.getHorario(),
+                racha.getStatus() != null ? racha.getStatus() : "ABERTO",
                 confirmados,
                 racha.getDataCriacao()
         );

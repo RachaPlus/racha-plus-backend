@@ -1,6 +1,7 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
 import br.com.rachaplus.api.application.dto.CadastroUsuarioDTO;
+import br.com.rachaplus.api.application.dto.SalvarAvatarDTO;
 import br.com.rachaplus.api.application.dto.UsuarioResponseDTO;
 import br.com.rachaplus.api.application.service.UsuarioService;
 import br.com.rachaplus.api.domain.Usuario;
@@ -38,5 +39,12 @@ public class UsuarioController {
     public ResponseEntity<UsuarioResponseDTO> me() {
         var usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return ResponseEntity.ok(new UsuarioResponseDTO(usuario));
+    }
+
+    @Operation(summary = "Salvar Avatar do Usuário", description = "Salva ou atualiza o avatar personalizado do usuário autenticado")
+    @PutMapping("/me/avatar")
+    public ResponseEntity<UsuarioResponseDTO> atualizarAvatar(@RequestBody SalvarAvatarDTO dto) {
+        var usuario = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        return ResponseEntity.ok(usuarioService.atualizarAvatar(usuario, dto != null ? dto.avatarJson() : null));
     }
 }

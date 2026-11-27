@@ -54,5 +54,15 @@ public class DatabaseSchemaMigrationRunner implements ApplicationRunner {
         } catch (Exception ex) {
             log.debug("Ajuste de racha_members.posicao ignorado: {}", ex.getMessage());
         }
+
+        // Preenche tipo = 'GERAL' nas avaliações legadas criadas antes do Sistema de Rating v2
+        try {
+            int atualizadas = jdbcTemplate.update("UPDATE avaliacoes SET tipo = 'GERAL' WHERE tipo IS NULL");
+            if (atualizadas > 0) {
+                log.info("Migracao de schema: {} avaliacoes legadas atualizadas para tipo = 'GERAL'", atualizadas);
+            }
+        } catch (Exception ex) {
+            log.debug("Ajuste de avaliacoes.tipo ignorado: {}", ex.getMessage());
+        }
     }
 }

@@ -44,6 +44,7 @@ class RachaServiceTest {
     private final Map<UUID, Racha> rachasStore = new LinkedHashMap<>();
     private final List<RachaMember> membersStore = new ArrayList<>();
     private final List<Avaliacao> avaliacoesStore = new ArrayList<>();
+    private final List<br.com.rachaplus.api.domain.Partida> partidasStore = new ArrayList<>();
 
     private RachaService rachaService;
     private Validator validator;
@@ -125,11 +126,26 @@ class RachaServiceTest {
                 }
         );
 
+        partidasStore.clear();
         PartidaRepository partidaRepository = (PartidaRepository) Proxy.newProxyInstance(
                 PartidaRepository.class.getClassLoader(),
                 new Class<?>[]{PartidaRepository.class},
-                (proxy, method, args) -> {
-                    throw new UnsupportedOperationException(method.getName());
+                (proxy, method, args) -> switch (method.getName()) {
+                    case "save", "saveAndFlush" -> {
+                        var p = (br.com.rachaplus.api.domain.Partida) args[0];
+                        if (p.getId() == null) p.setId(UUID.randomUUID());
+                        if (p.getDataPartida() == null) p.setDataPartida(LocalDateTime.now());
+                        partidasStore.removeIf(existing -> existing.getId().equals(p.getId()));
+                        partidasStore.add(p);
+                        yield p;
+                    }
+                    case "findAllByRachaId" -> {
+                        UUID rId = (UUID) args[0];
+                        yield partidasStore.stream()
+                                .filter(p -> p.getRacha().getId().equals(rId))
+                                .toList();
+                    }
+                    default -> throw new UnsupportedOperationException(method.getName());
                 }
         );
 
@@ -152,6 +168,9 @@ class RachaServiceTest {
                     case "findAllByRachaId" -> avaliacoesStore.stream()
                             .filter(a -> a.getRacha().getId().equals(args[0]))
                             .toList();
+                    case "findAllByAvaliadoId" -> avaliacoesStore.stream()
+                            .filter(a -> a.getAvaliado().getId().equals(args[0]))
+                            .toList();
                     case "countByAvaliadoId" -> avaliacoesStore.stream()
                             .filter(a -> a.getAvaliado().getId().equals(args[0]))
                             .count();
@@ -161,6 +180,19 @@ class RachaServiceTest {
                                 .mapToDouble(Avaliacao::getNota)
                                 .average();
                         yield media.isPresent() ? media.getAsDouble() : null;
+                    }
+                    case "deleteAll" -> {
+                        Iterable<?> itens = (Iterable<?>) args[0];
+                        Set<UUID> idsRemover = new HashSet<>();
+                        for (Object item : itens) {
+                            Avaliacao av = (Avaliacao) item;
+                            if (av.getAtributos() != null) {
+                                av.getAtributos().clear();
+                            }
+                            idsRemover.add(av.getId());
+                        }
+                        avaliacoesStore.removeIf(a -> idsRemover.contains(a.getId()));
+                        yield null;
                     }
                     case "deleteAllByAvaliadoId" -> {
                         avaliacoesStore.removeIf(a -> a.getAvaliado().getId().equals(args[0]));
@@ -535,5 +567,220 @@ class RachaServiceTest {
         assertEquals("Erro interno no servidor. Tente novamente mais tarde.", response.getBody());
         assertFalse(response.getBody().contains("usuarios"));
         assertFalse(response.getBody().contains("$2a$10$"));
+    }
+
+    // ===================== Sistema de Rating Dinâmico v2 (Atributos + Arquétipos) =====================
+
+    @Test
+    void deveTerPesosDeArquetipoSomandoCemPorCentoEmTodasAsPosicoes() {
+        for (Posicao posicao : Posicao.values()) {
+            var atributosEsperados = br.com.rachaplus.api.domain.AtributoEsporte.doEsporte(posicao.getEsporte());
+            assertEquals(6, atributosEsperados.size());
+            assertEquals(new HashSet<>(atributosEsperados), posicao.getPesos().keySet(),
+                    "Posição " + posicao + " deve possuir exatamente os 6 atributos de " + posicao.getEsporte());
+
+            double somaPesos = posicao.getPesos().values().stream()
+                    .mapToDouble(Float::doubleValue)
+                    .sum();
+            assertEquals(1.0, somaPesos, 1e-5, "Soma dos pesos de " + posicao + " deve ser 1.0 (100%)");
+        }
+    }
+
+    @Test
+    void deveCalcularAvaliacaoAvancadaPonderadaERecalcularAoTrocarPosicao() throws Exception {
+        Usuario admin = logarAdmin();
+        Racha racha = rachaService.create("Basquete de Domingo", null, "BASQUETE", admin);
+        rachaService.adicionarJogador(racha.getId(), new CreateRachaMemberDTO("Rafael", "ARMADOR", null), admin);
+        UUID rafaelId = idDoJogador("Rafael");
+
+        // ARMADOR: FINALIZACAO(0.15)*4.0 + ARREMESSO(0.20)*4.5 + CONTROLE_BOLA(0.25)*5.0
+        //        + PASSE(0.25)*5.0 + DEFESA(0.10)*3.0 + REBOTE(0.05)*1.5 = 4.375 -> 4.4
+        mockMvc.perform(put("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tipo": "AVANCADA",
+                                  "atributos": {
+                                    "FINALIZACAO": 4.0,
+                                    "ARREMESSO": 4.5,
+                                    "CONTROLE_BOLA": 5.0,
+                                    "PASSE": 5.0,
+                                    "DEFESA": 3.0,
+                                    "REBOTE": 1.5
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posicao").value("ARMADOR"))
+                .andExpect(jsonPath("$.nota").value(4.4))
+                .andExpect(jsonPath("$.minhaNota").value(4.4))
+                .andExpect(jsonPath("$.meuTipoAvaliacao").value("AVANCADA"))
+                .andExpect(jsonPath("$.meusAtributos.CONTROLE_BOLA").value(5.0))
+                .andExpect(jsonPath("$.meusAtributos.REBOTE").value(1.5))
+                .andExpect(jsonPath("$.mediaAtributos.CONTROLE_BOLA").value(5.0))
+                .andExpect(jsonPath("$.mediaAtributos.REBOTE").value(1.5))
+                .andExpect(jsonPath("$.totalAvaliacoes").value(1));
+
+        // Troca posição ARMADOR -> PIVO:
+        // PIVO: FINALIZACAO(0.25)*4.0 + ARREMESSO(0.05)*4.5 + CONTROLE_BOLA(0.05)*5.0
+        //     + PASSE(0.10)*5.0 + DEFESA(0.25)*3.0 + REBOTE(0.30)*1.5 = 3.175 -> 3.2
+        mockMvc.perform(put("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "nome": "Rafael", "posicao": "PIVO" }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.posicao").value("PIVO"))
+                .andExpect(jsonPath("$.nota").value(3.2))
+                .andExpect(jsonPath("$.minhaNota").value(3.2))
+                .andExpect(jsonPath("$.meuTipoAvaliacao").value("AVANCADA"))
+                .andExpect(jsonPath("$.mediaAtributos.REBOTE").value(1.5));
+    }
+
+    @Test
+    void deveCombinarAvaliacaoGeralEAvancadaEPermitirUpsertEntreModosERemoverSemErro() throws Exception {
+        Usuario admin = logarAdmin();
+        Racha racha = rachaService.create("Basquete de Domingo", null, "BASQUETE", admin);
+        rachaService.adicionarJogador(racha.getId(), new CreateRachaMemberDTO("Rafael", "ARMADOR", null), admin);
+        UUID rafaelId = idDoJogador("Rafael");
+
+        // 1) Admin envia avaliação AVANCADA -> nota 4.4
+        mockMvc.perform(put("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tipo": "AVANCADA",
+                                  "atributos": {
+                                    "FINALIZACAO": 4.0,
+                                    "ARREMESSO": 4.5,
+                                    "CONTROLE_BOLA": 5.0,
+                                    "PASSE": 5.0,
+                                    "DEFESA": 3.0,
+                                    "REBOTE": 1.5
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nota").value(4.4));
+
+        // 2) Segundo usuário envia avaliação GERAL (4.0)
+        Usuario outro = new Usuario();
+        outro.setId(UUID.randomUUID());
+        outro.setUsername("outro_player");
+        RachaMember membroOutro = new RachaMember();
+        membroOutro.setId(UUID.randomUUID());
+        membroOutro.setRacha(racha);
+        membroOutro.setUser(outro);
+        membroOutro.setRole(RachaRole.PLAYER);
+        membersStore.add(membroOutro);
+
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(outro, null, outro.getAuthorities())
+        );
+
+        // OVR = (4.4 + 4.0) / 2 = 4.2; mediaAtributos reflete apenas a avaliação AVANCADA!
+        mockMvc.perform(put("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "tipo": "GERAL", "nota": 4.0 }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nota").value(4.2))
+                .andExpect(jsonPath("$.minhaNota").value(4.0))
+                .andExpect(jsonPath("$.meuTipoAvaliacao").value("GERAL"))
+                .andExpect(jsonPath("$.meusAtributos").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.mediaAtributos.CONTROLE_BOLA").value(5.0))
+                .andExpect(jsonPath("$.totalAvaliacoes").value(2));
+
+        // 3) Admin faz upsert trocando sua avaliação de AVANCADA -> GERAL (5.0): limpa atributos anteriores
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(admin, null, admin.getAuthorities())
+        );
+
+        mockMvc.perform(put("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                { "nota": 5.0 }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nota").value(4.5))
+                .andExpect(jsonPath("$.minhaNota").value(5.0))
+                .andExpect(jsonPath("$.meuTipoAvaliacao").value("GERAL"))
+                .andExpect(jsonPath("$.meusAtributos").value(org.hamcrest.Matchers.nullValue()))
+                .andExpect(jsonPath("$.mediaAtributos").isEmpty())
+                .andExpect(jsonPath("$.totalAvaliacoes").value(2));
+
+        // 4) Admin volta para AVANCADA e depois remove o jogador -> 204 No Content sem órfãos
+        mockMvc.perform(put("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tipo": "AVANCADA",
+                                  "atributos": {
+                                    "FINALIZACAO": 4.0,
+                                    "ARREMESSO": 4.0,
+                                    "CONTROLE_BOLA": 4.0,
+                                    "PASSE": 4.0,
+                                    "DEFESA": 4.0,
+                                    "REBOTE": 4.0
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(delete("/api/v1/rachas/" + racha.getId() + "/members/" + rafaelId))
+                .andExpect(status().isNoContent());
+
+        assertTrue(avaliacoesStore.isEmpty());
+    }
+
+    @Test
+    void deveValidarAtributoDeEsporteErradoEAceitarLiberoSemAtaqueEBloqueio() throws Exception {
+        Usuario admin = logarAdmin();
+        Racha rachaBasquete = rachaService.create("Basquete de Domingo", null, "BASQUETE", admin);
+        rachaService.adicionarJogador(rachaBasquete.getId(), new CreateRachaMemberDTO("Rafael", "ARMADOR", null), admin);
+        UUID rafaelId = idDoJogador("Rafael");
+
+        // Atributo de Futebol (AGILIDADE) em racha de Basquete -> 400 Bad Request
+        mockMvc.perform(put("/api/v1/rachas/" + rachaBasquete.getId() + "/members/" + rafaelId + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tipo": "AVANCADA",
+                                  "atributos": {
+                                    "FINALIZACAO": 4.0,
+                                    "ARREMESSO": 4.0,
+                                    "CONTROLE_BOLA": 4.0,
+                                    "PASSE": 4.0,
+                                    "DEFESA": 4.0,
+                                    "AGILIDADE": 4.5
+                                  }
+                                }
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$[0].campo").value("atributos"));
+
+        // Em Vôlei, LIBERO possui peso 0.00 em ATAQUE e BLOQUEIO -> aceita omiti-los
+        Racha rachaVolei = rachaService.create("Vôlei de Quarta", null, "VOLEI", admin);
+        RachaMemberResponseDTO marcos = rachaService.adicionarJogador(
+                rachaVolei.getId(), new CreateRachaMemberDTO("Marcos", "LIBERO", null), admin);
+
+        // SAQUE(0.05)*4.0 + RECEPCAO(0.45)*5.0 + LEVANTAMENTO(0.10)*4.0 + DEFESA_FUNDO(0.40)*4.5 = 4.65 -> 4.7
+        mockMvc.perform(put("/api/v1/rachas/" + rachaVolei.getId() + "/members/" + marcos.id() + "/avaliacao")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {
+                                  "tipo": "AVANCADA",
+                                  "atributos": {
+                                    "SAQUE": 4.0,
+                                    "RECEPCAO": 5.0,
+                                    "LEVANTAMENTO": 4.0,
+                                    "DEFESA_FUNDO": 4.5
+                                  }
+                                }
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nota").value(4.7))
+                .andExpect(jsonPath("$.meuTipoAvaliacao").value("AVANCADA"));
     }
 }

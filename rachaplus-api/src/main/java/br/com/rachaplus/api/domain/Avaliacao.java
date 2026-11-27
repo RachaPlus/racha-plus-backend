@@ -5,6 +5,8 @@ import lombok.Data;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.UUID;
 
 @Entity
@@ -35,6 +37,21 @@ public class Avaliacao {
 
     @Column(nullable = false)
     private float nota;
+
+    // Anulável no DDL para compatibilidade com registros legados em ddl-auto=update
+    @Enumerated(EnumType.STRING)
+    @Column(name = "tipo")
+    private TipoAvaliacao tipo = TipoAvaliacao.GERAL;
+
+    @ElementCollection(fetch = FetchType.EAGER)
+    @CollectionTable(
+            name = "avaliacao_atributos",
+            joinColumns = @JoinColumn(name = "avaliacao_id")
+    )
+    @MapKeyEnumerated(EnumType.STRING)
+    @MapKeyColumn(name = "atributo")
+    @Column(name = "nota", nullable = false)
+    private Map<AtributoEsporte, Float> atributos = new EnumMap<>(AtributoEsporte.class);
 
     @UpdateTimestamp
     @Column(name = "atualizado_em", nullable = false)

@@ -1,8 +1,14 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
+import br.com.rachaplus.api.application.dto.AcaoPartidaDTO;
 import br.com.rachaplus.api.application.dto.AvaliacaoDTO;
+import br.com.rachaplus.api.application.dto.ConviteRachaResponseDTO;
 import br.com.rachaplus.api.application.dto.CreateRachaDTO;
 import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
+import br.com.rachaplus.api.application.dto.EntrarRachaDTO;
+import br.com.rachaplus.api.application.dto.EquilibrarTimesRequestDTO;
+import br.com.rachaplus.api.application.dto.EstadoRachaResponseDTO;
+import br.com.rachaplus.api.application.dto.IniciarPartidaDTO;
 import br.com.rachaplus.api.application.dto.RachaMemberResponseDTO;
 import br.com.rachaplus.api.application.dto.RachaResponseDTO;
 import br.com.rachaplus.api.application.dto.UpdateRachaMemberDTO;
@@ -72,6 +78,22 @@ public class RachaController {
         return ResponseEntity.ok(rachaService.buscarRacha(id, user));
     }
 
+    @Operation(summary = "Visualizar Racha por Convite", description = "Retorna dados do racha e lista de membros para acesso via link ou QR Code (logado ou convidado)")
+    @GetMapping("/{id}/convite")
+    public ResponseEntity<ConviteRachaResponseDTO> detailConvite(@PathVariable UUID id) {
+        var user = usuarioLogadoOpcional();
+        return ResponseEntity.ok(rachaService.obterConviteRacha(id, user));
+    }
+
+    @Operation(summary = "Entrar no Racha", description = "Entra no racha via convite (vincula à conta se logado; entra como avulso sem histórico se não logado)")
+    @PostMapping("/{id}/entrar")
+    public ResponseEntity<RachaMemberResponseDTO> join(
+            @PathVariable UUID id,
+            @RequestBody(required = false) EntrarRachaDTO dto) {
+        var user = usuarioLogadoOpcional();
+        return ResponseEntity.ok(rachaService.entrarNoRacha(id, dto, user));
+    }
+
     @Operation(summary = "Listar membros do Racha", description = "Lista os membros do racha com OVR (nota), minhaNota e totalAvaliacoes")
     @GetMapping("/{id}/members")
     public ResponseEntity<List<RachaMemberResponseDTO>> listMembers(@PathVariable UUID id) {
@@ -112,17 +134,56 @@ public class RachaController {
         return ResponseEntity.noContent().build();
     }
 
-    @Operation(summary = "Avaliar jogador", description = "Cria ou atualiza a nota (0.5 a 5.0, passos de 0.5) do usuário logado para o jogador e recalcula o OVR")
+    @Operation(summary = "Avaliar jogador", description = "Cria ou atualiza a avaliação (GERAL ou AVANCADA por atributos) do usuário logado para o jogador e recalcula o OVR")
     @PutMapping("/{id}/members/{memberId}/avaliacao")
     public ResponseEntity<RachaMemberResponseDTO> rateMember(
             @PathVariable UUID id,
             @PathVariable UUID memberId,
             @RequestBody @Valid AvaliacaoDTO dto) {
         var user = usuarioLogado();
-        return ResponseEntity.ok(rachaService.avaliarJogador(id, memberId, dto.nota(), user));
+        return ResponseEntity.ok(rachaService.avaliarJogador(id, memberId, dto, user));
+    }
+
+    @Operation(summary = "Estado ao vivo do Racha", description = "Retorna times sorteados, partida em andamento, cronômetro, placar e histórico de partidas (público por convite)")
+    @GetMapping("/{id}/estado")
+    public ResponseEntity<EstadoRachaResponseDTO> getLiveState(@PathVariable UUID id) {
+        return ResponseEntity.ok(rachaService.obterEstadoRacha(id));
+    }
+
+    @Operation(summary = "Iniciar Partida", description = "Inicia uma partida entre dois times sorteados definindo duração e tempo de intervalo (apenas admin)")
+    @PostMapping("/{id}/partida/iniciar")
+    public ResponseEntity<EstadoRachaResponseDTO> startMatch(
+            @PathVariable UUID id,
+            @RequestBody IniciarPartidaDTO dto) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.iniciarPartida(id, dto, user));
+    }
+
+    @Operation(summary = "Ação na Partida", description = "Atualiza placar, pausa/retoma cronômetro, aciona intervalo ou encerra a partida atual (apenas admin)")
+    @PutMapping("/{id}/partida/acao")
+    public ResponseEntity<EstadoRachaResponseDTO> matchAction(
+            @PathVariable UUID id,
+            @RequestBody AcaoPartidaDTO dto) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.executarAcaoPartida(id, dto, user));
+    }
+
+    @Operation(summary = "Finalizar Racha", description = "Finaliza o racha definitivamente, tornando-o somente leitura no histórico (apenas admin)")
+    @PostMapping("/{id}/finalizar")
+    public ResponseEntity<EstadoRachaResponseDTO> finishRacha(@PathVariable UUID id) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.finalizarRacha(id, user));
     }
 
     private Usuario usuarioLogado() {
         return (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    }
+
+    private Usuario usuarioLogadoOpcional() {
+        var auth = SecurityContextHolder.getContext().getAuthentication();
+        if (auth != null && auth.getPrincipal() instanceof Usuario usuario) {
+            return usuario;
+        }
+        return null;
     }
 }

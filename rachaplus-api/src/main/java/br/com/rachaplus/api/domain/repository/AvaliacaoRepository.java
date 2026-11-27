@@ -16,6 +16,8 @@ public interface AvaliacaoRepository extends JpaRepository<Avaliacao, UUID> {
 
     List<Avaliacao> findAllByRachaId(UUID rachaId);
 
+    List<Avaliacao> findAllByAvaliadoId(UUID avaliadoId);
+
     long countByAvaliadoId(UUID avaliadoId);
 
     @Query("select avg(a.nota) from Avaliacao a where a.avaliado.id = :avaliadoId")

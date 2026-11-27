@@ -33,6 +33,15 @@ public class Racha {
     @Column(name = "horario")
     private LocalTime horario;
 
+    @Column(name = "status")
+    private String status = "ABERTO";
+
+    @Column(name = "estado_jogo_json", columnDefinition = "TEXT")
+    private String estadoJogoJson;
+
+    @Column(name = "codigo_convite", unique = true)
+    private String codigoConvite;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime dataCriacao;
