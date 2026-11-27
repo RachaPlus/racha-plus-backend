@@ -15,6 +15,8 @@ import br.com.rachaplus.api.domain.repository.RachaRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -43,12 +45,19 @@ public class RachaService {
 
     @Transactional
     public Racha create(String nome, String descricao, String esporte, Usuario owner) {
+        return create(nome, descricao, esporte, null, null, owner);
+    }
+
+    @Transactional
+    public Racha create(String nome, String descricao, String esporte, LocalDate data, LocalTime horario, Usuario owner) {
         final float defaultRating = 0.0f;
 
         var newRacha = new Racha();
         newRacha.setNome(nome);
         newRacha.setDescricao(descricao);
         newRacha.setEsporte(esporte);
+        newRacha.setData(data);
+        newRacha.setHorario(horario);
         var savedRacha = rachaRepository.saveAndFlush(newRacha);
 
         var membership = new RachaMember();

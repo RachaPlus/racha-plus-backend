@@ -4,7 +4,9 @@ import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.UUID;
 
 @Entity
@@ -24,6 +26,12 @@ public class Racha {
 
     @Column(name = "esporte")
     private String esporte;
+
+    @Column(name = "data")
+    private LocalDate data;
+
+    @Column(name = "horario")
+    private LocalTime horario;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)

@@ -35,12 +35,21 @@ public class RachaController {
     public ResponseEntity<RachaResponseDTO> create(@RequestBody @Valid CreateRachaDTO newRachaData, UriComponentsBuilder uriBuilder) {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        var racha = rachaService.create(
-                newRachaData.nome(),
-                newRachaData.descricao(),
-                newRachaData.esporte(),
-                user
-        );
+        var racha = (newRachaData.data() == null && newRachaData.horario() == null)
+                ? rachaService.create(
+                        newRachaData.nome(),
+                        newRachaData.descricao(),
+                        newRachaData.esporte(),
+                        user
+                )
+                : rachaService.create(
+                        newRachaData.nome(),
+                        newRachaData.descricao(),
+                        newRachaData.esporte(),
+                        newRachaData.data(),
+                        newRachaData.horario(),
+                        user
+                );
         var confirmados = rachaService.contarMembros(racha.getId());
 
         var uri = uriBuilder.path("/api/v1/rachas/{id}").buildAndExpand(racha.getId()).toUri();
