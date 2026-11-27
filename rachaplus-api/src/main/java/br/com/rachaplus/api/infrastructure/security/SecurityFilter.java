@@ -25,20 +25,32 @@ public class SecurityFilter extends OncePerRequestFilter {
     }
 
     @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws ServletException, IOException {
+    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+            throws ServletException, IOException {
         // 1. Recupera o token do cabeçalho "Authorization"
         var tokenJWT = recuperarToken(request);
 
         if (tokenJWT != null) {
-            // 2. Valida o token e pega o e-mail do usuário
-            var subject = tokenService.getSubject(tokenJWT);
+            try {
+                // 2. Valida o token e pega o e-mail do usuário
+                var subject = tokenService.getSubject(tokenJWT);
 
-            // 3. Busca o usuário no banco para confirmar que ele ainda existe/está ativo
-            var usuario = repository.findByEmail(subject).orElseThrow(() -> new UsernameNotFoundException("Usuário não encontrado"));
+                // 3. Busca o usuário no banco para confirmar que ele ainda existe/está ativo
+                var usuario = repository.findByEmail(subject).orElse(null);
 
-            // 4. Cria o objeto de autenticação do Spring e "loga" o usuário no contexto da requisição
-            var authentication = new UsernamePasswordAuthenticationToken(usuario, null, usuario.getAuthorities());
-            SecurityContextHolder.getContext().setAuthentication(authentication);
+                if (usuario != null) {
+                    // 4. Cria o objeto de autenticação do Spring e "loga" o usuário no contexto da
+                    // requisição
+                    var authentication = new UsernamePasswordAuthenticationToken(usuario, null,
+                            usuario.getAuthorities());
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                }
+            } catch (Exception ex) {
+                // Se o token for inválido, malformado ou expirado, apenas limpa o contexto e
+                // segue o fluxo
+                // Rotas públicas (como cadastro /users) continuarão funcionando normalmente
+                SecurityContextHolder.clearContext();
+            }
         }
 
         // Segue o fluxo para o próximo filtro ou para o Controller

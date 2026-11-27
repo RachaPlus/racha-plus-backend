@@ -1,8 +1,11 @@
 package br.com.rachaplus.api.infrastructure.controller;
 
+import br.com.rachaplus.api.application.dto.AvaliacaoDTO;
 import br.com.rachaplus.api.application.dto.CreateRachaDTO;
+import br.com.rachaplus.api.application.dto.CreateRachaMemberDTO;
 import br.com.rachaplus.api.application.dto.RachaMemberResponseDTO;
 import br.com.rachaplus.api.application.dto.RachaResponseDTO;
+import br.com.rachaplus.api.application.dto.UpdateRachaMemberDTO;
 import br.com.rachaplus.api.application.service.RachaService;
 import br.com.rachaplus.api.domain.Usuario;
 import io.swagger.v3.oas.annotations.Operation;
@@ -32,35 +35,94 @@ public class RachaController {
     public ResponseEntity<RachaResponseDTO> create(@RequestBody @Valid CreateRachaDTO newRachaData, UriComponentsBuilder uriBuilder) {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
-        var racha = rachaService.create(newRachaData.name(), newRachaData.description(), user);
+        var racha = (newRachaData.data() == null && newRachaData.horario() == null)
+                ? rachaService.create(
+                        newRachaData.nome(),
+                        newRachaData.descricao(),
+                        newRachaData.esporte(),
+                        user
+                )
+                : rachaService.create(
+                        newRachaData.nome(),
+                        newRachaData.descricao(),
+                        newRachaData.esporte(),
+                        newRachaData.data(),
+                        newRachaData.horario(),
+                        user
+                );
+        var confirmados = rachaService.contarMembros(racha.getId());
 
         var uri = uriBuilder.path("/api/v1/rachas/{id}").buildAndExpand(racha.getId()).toUri();
-        return ResponseEntity.created(uri).body(new RachaResponseDTO(racha));
+        return ResponseEntity.created(uri).body(new RachaResponseDTO(racha, confirmados));
     }
 
     @Operation(summary = "Listar meus Rachas", description = "Lista todos os rachas em que o usuário autenticado é membro ou organizador")
     @GetMapping
-    public ResponseEntity<List<RachaMemberResponseDTO>> listMyRachas() {
+    public ResponseEntity<List<RachaResponseDTO>> listMyRachas() {
         var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var members = rachaService.listByUser(user);
-
-        var response = members.stream()
-                .map(RachaMemberResponseDTO::new)
-                .toList();
+        var response = rachaService.listarRachasDoUsuario(user);
 
         return ResponseEntity.ok(response);
     }
 
-    @Operation(summary = "Listar membros do Racha", description = "Lista os membros participantes de um racha específico por ID")
+    @Operation(summary = "Detalhar Racha", description = "Retorna os dados de um racha. O usuário autenticado precisa ser membro")
+    @GetMapping("/{id}")
+    public ResponseEntity<RachaResponseDTO> detail(@PathVariable UUID id) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.buscarRacha(id, user));
+    }
+
+    @Operation(summary = "Listar membros do Racha", description = "Lista os membros do racha com OVR (nota), minhaNota e totalAvaliacoes")
     @GetMapping("/{id}/members")
     public ResponseEntity<List<RachaMemberResponseDTO>> listMembers(@PathVariable UUID id) {
-        var user = (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        var members = rachaService.listMembers(id, user);
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.listMembers(id, user));
+    }
 
-        var response = members.stream()
-                .map(RachaMemberResponseDTO::new)
-                .toList();
+    @Operation(summary = "Adicionar jogador", description = "Adiciona um jogador avulso com posição do esporte do racha e nota inicial opcional (apenas admin)")
+    @PostMapping("/{id}/members")
+    public ResponseEntity<RachaMemberResponseDTO> addMember(
+            @PathVariable UUID id,
+            @RequestBody @Valid CreateRachaMemberDTO newMemberData,
+            UriComponentsBuilder uriBuilder) {
+        var user = usuarioLogado();
+        var savedMember = rachaService.adicionarJogador(id, newMemberData, user);
 
-        return ResponseEntity.ok(response);
+        var uri = uriBuilder.path("/api/v1/rachas/{id}/members/{memberId}")
+                .buildAndExpand(id, savedMember.id()).toUri();
+
+        return ResponseEntity.created(uri).body(savedMember);
+    }
+
+    @Operation(summary = "Editar jogador", description = "Atualiza nome e posição de um jogador do racha (apenas admin)")
+    @PutMapping("/{id}/members/{memberId}")
+    public ResponseEntity<RachaMemberResponseDTO> updateMember(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @RequestBody @Valid UpdateRachaMemberDTO dto) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.atualizarJogador(id, memberId, dto, user));
+    }
+
+    @Operation(summary = "Remover jogador", description = "Remove um jogador do racha e as avaliações que ele recebeu (apenas admin)")
+    @DeleteMapping("/{id}/members/{memberId}")
+    public ResponseEntity<Void> removeMember(@PathVariable UUID id, @PathVariable UUID memberId) {
+        var user = usuarioLogado();
+        rachaService.removerJogador(id, memberId, user);
+        return ResponseEntity.noContent().build();
+    }
+
+    @Operation(summary = "Avaliar jogador", description = "Cria ou atualiza a nota (0.5 a 5.0, passos de 0.5) do usuário logado para o jogador e recalcula o OVR")
+    @PutMapping("/{id}/members/{memberId}/avaliacao")
+    public ResponseEntity<RachaMemberResponseDTO> rateMember(
+            @PathVariable UUID id,
+            @PathVariable UUID memberId,
+            @RequestBody @Valid AvaliacaoDTO dto) {
+        var user = usuarioLogado();
+        return ResponseEntity.ok(rachaService.avaliarJogador(id, memberId, dto.nota(), user));
+    }
+
+    private Usuario usuarioLogado() {
+        return (Usuario) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
     }
 }

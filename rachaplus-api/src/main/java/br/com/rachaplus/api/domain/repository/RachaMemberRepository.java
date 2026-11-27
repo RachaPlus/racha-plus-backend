@@ -1,10 +1,12 @@
 package br.com.rachaplus.api.domain.repository;
 
 import br.com.rachaplus.api.domain.RachaMember;
+import br.com.rachaplus.api.domain.RachaRole;
 import br.com.rachaplus.api.domain.Usuario;
 import org.springframework.data.jpa.repository.JpaRepository;
 
 import java.util.List;
+import java.util.Optional;
 import java.util.UUID;
 
 public interface RachaMemberRepository extends JpaRepository<RachaMember, UUID> {
@@ -12,5 +14,11 @@ public interface RachaMemberRepository extends JpaRepository<RachaMember, UUID> 
 
     List<RachaMember> findAllByRachaId(UUID rachaId);
 
+    long countByRachaId(UUID rachaId);
+
     boolean existsByRachaIdAndUserId(UUID rachaId, UUID userId);
+
+    Optional<RachaMember> findByRachaIdAndUserId(UUID rachaId, UUID userId);
+
+    List<RachaMember> findAllByUserAndRole(Usuario user, RachaRole role);
 }
