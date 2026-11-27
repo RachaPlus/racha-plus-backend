@@ -15,6 +15,7 @@ import br.com.rachaplus.api.domain.exception.RegraNegocioException;
 import br.com.rachaplus.api.domain.repository.RachaMemberRepository;
 import br.com.rachaplus.api.domain.repository.RachaRepository;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -44,6 +45,7 @@ public class EquilibrioTimesService {
     private final ObjectMapper objectMapper = new ObjectMapper();
     private final Random random;
 
+    @Autowired
     public EquilibrioTimesService(RachaRepository rachaRepository,
                                   RachaMemberRepository rachaMemberRepository) {
         this(rachaRepository, rachaMemberRepository, new Random());
